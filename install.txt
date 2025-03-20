@@ -1,3 +1,9 @@
+conda create -y -n lerobot python=3.10
+
+conda activate lerobot
+
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 
-pip install -e ".[aloha, pusht, pi0]" --no-deps
+pip install -e ".[aloha, pusht, pi0, test]"
+
+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
