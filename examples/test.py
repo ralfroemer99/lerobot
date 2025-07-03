@@ -1,10 +1,10 @@
 import numpy as np
 import torch
-from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy
-from lerobot.common.policies.diffusion.modeling_diffusion import DiffusionPolicy
+from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
+from lerobot.policies.diffusion.modeling_diffusion import DiffusionPolicy
 
-policy = DiffusionPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/dp_test_ralf/checkpoints/last/pretrained_model")
-# policy = SmolVLAPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/smolvla_test_ralf/checkpoints/last/pretrained_model")
+# policy = DiffusionPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/dp_test_ralf/checkpoints/last/pretrained_model")
+policy = SmolVLAPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/smolvla_test_ralf/checkpoints/last/pretrained_model")
 policy.reset()
 state=np.zeros(7)
 image=np.zeros((256, 256, 3))
