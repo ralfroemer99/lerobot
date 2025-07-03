@@ -51,7 +51,7 @@ def get_step_checkpoint_dir(output_dir: Path, total_steps: int, step: int) -> Pa
 
 
 def get_step_checkpoint_dir_str(output_dir: Path, name: str) -> Path:
-    """Returns the checkpoint sub-directory corresponding to the step number."""
+    """Returns the checkpoint sub-directory corresponding to the "best" or "last" step."""
     return output_dir / CHECKPOINTS_DIR / name
 
 
