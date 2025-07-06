@@ -1,6 +1,6 @@
 {
     "dataset": {
-        "repo_id": "test_ralf"
+        "repo_id": "ralfroemer/pick_lego_block"
     },
     "policy": {
         "type": "diffusion",
@@ -12,6 +12,14 @@
         },
         "input_features": {
             "observation.images.right_wrist_camera": {
+                "type": "VISUAL",
+                "shape": [
+                    3,
+                    256,
+                    256
+                ]
+            },
+            "observation.images.right_third_person_camera": {
                 "type": "VISUAL",
                 "shape": [
                     3,
@@ -83,17 +91,16 @@
         "scheduler_name": "cosine",
         "scheduler_warmup_steps": 500
     },
-    "output_dir": "outputs/train/delete",
     "job_name": "diffusion",
     "resume": false,
     "seed": 1000,
     "num_workers": 4,
-    "batch_size": 8,
-    "steps": 3000,
-    "eval_freq": 100,
-    "log_freq": 500,
+    "batch_size": 32,
+    "steps": 5000,
+    "eval_freq": 500,
+    "log_freq": 100,
     "save_checkpoint": true,
-    "save_freq": 500,
+    "save_freq": 1000,
     "use_policy_training_preset": true,
     "optimizer": {
         "type": "adam",
