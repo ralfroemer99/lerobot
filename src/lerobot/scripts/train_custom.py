@@ -130,6 +130,11 @@ def validate_policy(
 
 @parser.wrap()
 def train(cfg: TrainPipelineConfig):
+    # If the output dir does not exist, create it.
+    # if not os.path.exists(cfg.output_dir):
+    #     os.makedirs(cfg.output_dir)
+    # init_logging(log_file=os.path.join(cfg.output_dir, "training.log"))
+
     cfg.validate()
     logging.info(pformat(cfg.to_dict()))
 
@@ -285,9 +290,12 @@ def train(cfg: TrainPipelineConfig):
 
         if cfg.save_checkpoint and is_saving_step:
             # logging.info(f"Checkpoint policy after step {step}")
-            # checkpoint_dir = get_step_checkpoint_dir(cfg.output_dir, cfg.steps, step)
-            checkpoint_dir = get_step_checkpoint_dir_str(cfg.output_dir, "last")
+            checkpoint_dir = get_step_checkpoint_dir(cfg.output_dir, cfg.steps, step)
+            # save_checkpoint(checkpoint_dir, step, cfg, policy, optimizer, lr_scheduler)
+            # checkpoint_dir = get_step_checkpoint_dir_str(cfg.output_dir, "last")
+            # save_checkpoint(checkpoint_dir, step, cfg, policy, optimizer, lr_scheduler)
             save_checkpoint(checkpoint_dir, step, cfg, policy, optimizer, lr_scheduler)
+            update_last_checkpoint(checkpoint_dir)
             if wandb_logger:
                 wandb_logger.log_policy(checkpoint_dir)
 
@@ -298,7 +306,10 @@ def train(cfg: TrainPipelineConfig):
                 torch.no_grad(),
                 torch.autocast(device_type=device.type) if cfg.policy.use_amp else nullcontext(),
             ):
-                for batch in val_dataloader:
+                # Only use up to 100 validation batches to avoid long validation times.
+                for i, batch in enumerate(val_dataloader):
+                    if i >= 100:  # Limit to 100 validation batches
+                        break
                     for key in batch:
                         if isinstance(batch[key], torch.Tensor):
                             batch[key] = batch[key].to(device, non_blocking=True)
@@ -322,5 +333,5 @@ def train(cfg: TrainPipelineConfig):
 
 
 if __name__ == "__main__":
-    init_logging()
+    init_logging(log_file="outputs/train/training.log")
     train()

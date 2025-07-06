@@ -1,10 +1,12 @@
 import numpy as np
 import torch
+import time
 from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 from lerobot.policies.diffusion.modeling_diffusion import DiffusionPolicy
 
-# policy = DiffusionPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/dp_test_ralf/checkpoints/last/pretrained_model")
-policy = SmolVLAPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/smolvla_test_ralf/checkpoints/last/pretrained_model")
+# policy = DiffusionPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/dp_ralf_pick_lego_blocks/checkpoints/last/pretrained_model")
+policy = SmolVLAPolicy.from_pretrained("/home/ralf/Projects/lerobot/outputs/train/smolvla_ralf_pick_lego_blocks/checkpoints/last/pretrained_model")
+policy.n_action_steps = 5
 policy.reset()
 state=np.zeros(7)
 image=np.zeros((256, 256, 3))
@@ -12,6 +14,7 @@ image=np.zeros((256, 256, 3))
 observation = {
     "observation.state": state,
     "observation.images.right_wrist_camera": image,
+    "observation.images.right_third_person_camera": image,
     "task": "pick the lego block."
 }
 
@@ -30,7 +33,10 @@ for name in observation:
         observation[name] = observation[name].unsqueeze(0)
         observation[name] = observation[name].to('cuda')
 
-action = policy.select_action(observation)
+for i in range(10):
+    start_time = time.time()
+    action = policy.select_action(observation)
+    print("Time taken for action selection:", time.time() - start_time)
 
-print("Action:", action)
+# print("Action:", action)
 
