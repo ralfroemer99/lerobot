@@ -121,9 +121,8 @@ def validate_policy(
     lock=None,
 ) -> torch.Tensor:
     device = get_device_from_parameters(policy)
-    policy.eval()
     with torch.autocast(device_type=device.type) if use_amp else nullcontext():
-        loss, output_dict = policy.forward(batch)
+        loss, _ = policy.forward(batch)
         # TODO(rcadene): policy.unnormalize_outputs(out_dict)
 
     return loss
@@ -131,9 +130,10 @@ def validate_policy(
 @parser.wrap()
 def train(cfg: TrainPipelineConfig):
     # If the output dir does not exist, create it.
-    # if not os.path.exists(cfg.output_dir):
-    #     os.makedirs(cfg.output_dir)
-    # init_logging(log_file=os.path.join(cfg.output_dir, "training.log"))
+    # if 'dp' in str(cfg.output_dir):
+    #     init_logging(log_file="outputs/train/training_dp.log")
+    # else:
+    #     init_logging(log_file="outputs/train/training.log")
 
     cfg.validate()
     logging.info(pformat(cfg.to_dict()))
@@ -154,7 +154,7 @@ def train(cfg: TrainPipelineConfig):
 
     logging.info("Creating dataset")
     train_dataset, val_dataset = make_dataset_split(cfg)
-    dataset = make_dataset(cfg)
+    # dataset = make_dataset(cfg)
 
     # Create environment used for evaluating checkpoints during training on simulation data.
     # On real-world data, no need to create an environment as evaluations are done outside train.py,
@@ -224,12 +224,13 @@ def train(cfg: TrainPipelineConfig):
         val_dataset,
         num_workers=cfg.num_workers,
         batch_size=cfg.batch_size,
-        shuffle=False,
+        shuffle=shuffle,
         sampler=val_sampler,
         pin_memory=device.type != "cpu",
         drop_last=False,
     )
     train_dl_iter = cycle(train_dataloader)
+    val_dl_iter = cycle(val_dataloader)
 
     policy.train()
 
@@ -251,7 +252,7 @@ def train(cfg: TrainPipelineConfig):
     # progress_bar = tqdm(range(n_epochs), desc="Training", leave=True)
 
     min_val_loss = float("inf")
-    for _ in range(step, cfg.steps):
+    for k in range(step, cfg.steps):
         start_time = time.perf_counter()
         batch = next(train_dl_iter)
         train_tracker.dataloading_s = time.perf_counter() - start_time
@@ -259,7 +260,6 @@ def train(cfg: TrainPipelineConfig):
         for key in batch:
             if isinstance(batch[key], torch.Tensor):
                 batch[key] = batch[key].to(device, non_blocking=True)
-
         train_tracker, output_dict = update_policy(
             train_tracker,
             policy,
@@ -302,13 +302,13 @@ def train(cfg: TrainPipelineConfig):
         if is_eval_step:
             step_id = get_step_identifier(step, cfg.steps)
             val_loss = 0.0
-            with (
-                torch.no_grad(),
-                torch.autocast(device_type=device.type) if cfg.policy.use_amp else nullcontext(),
-            ):
-                # Only use up to 100 validation batches to avoid long validation times.
-                for i, batch in enumerate(val_dataloader):
-                    if i >= 100:  # Limit to 100 validation batches
+
+            policy.eval()
+            with torch.no_grad():
+                # Only use up to 20 validation batches to avoid long validation times.
+                for i in range(min(len(val_dataloader), 20)):
+                    batch = next(val_dl_iter)
+                    if i >= 20:  # Limit to 20 validation batches
                         break
                     for key in batch:
                         if isinstance(batch[key], torch.Tensor):
@@ -316,7 +316,7 @@ def train(cfg: TrainPipelineConfig):
 
                     val_loss += validate_policy(policy, batch, use_amp=cfg.policy.use_amp).item()
 
-            val_loss /= len(val_dataloader)
+            val_loss /= min(len(val_dataloader), 20)  # Average over the number of batches used
 
             if val_loss < min_val_loss:
                 min_val_loss = val_loss
@@ -325,6 +325,7 @@ def train(cfg: TrainPipelineConfig):
                 logging.info(f"Validation loss: {val_loss:.3f} at step {step_id} - new best")
             else:
                 logging.info(f"Validation loss: {val_loss:.3f} at step {step_id}")
+            policy.train()
 
     logging.info("End of training")
 
@@ -333,5 +334,5 @@ def train(cfg: TrainPipelineConfig):
 
 
 if __name__ == "__main__":
-    init_logging(log_file="outputs/train/training.log")
+    init_logging()
     train()
