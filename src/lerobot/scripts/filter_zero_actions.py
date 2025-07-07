@@ -12,6 +12,13 @@ def action_nonzero(frame):
         return False
     else:
         return True
+    
+def clean_action(action):
+    """Clean the action by setting the first 6 elements to zero if they are close to zero."""
+    set_to_zero_dims = [3, 4]
+    action[set_to_zero_dims] = 0.0
+    return action
+    
 
 source_repo_id = "ralfroemer/pick_lego_block"
 target_repo_id = source_repo_id + "_filtered"
@@ -19,6 +26,7 @@ target_repo_id = source_repo_id + "_filtered"
 # Copy all frames from the source dataset to the target dataset, but filter out frames with zero actions.
 source_dataset = LeRobotDataset(repo_id=source_repo_id)
 
+# If the target dataset already exists, take it 
 dataset = LeRobotDataset.create(
     repo_id=target_repo_id,
     fps=source_dataset.meta.fps,
@@ -55,6 +63,9 @@ for episode_idx in range(source_dataset.num_episodes):
         if np.linalg.norm(action[:3]) <= 1e-3 and gripper_unchanged:
             # print(f"Skipping frame {frame_data['timestamp']} in episode {episode_idx} due to zero action")
             continue
+
+        # Clean the action if needed
+        action = clean_action(action)
             
         n_frames += 1
         # Convert frame data to the format expected by add_frame

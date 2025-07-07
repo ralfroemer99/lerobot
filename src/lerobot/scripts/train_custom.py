@@ -130,10 +130,12 @@ def validate_policy(
 @parser.wrap()
 def train(cfg: TrainPipelineConfig):
     # If the output dir does not exist, create it.
-    # if 'dp' in str(cfg.output_dir):
-    #     init_logging(log_file="outputs/train/training_dp.log")
-    # else:
-    #     init_logging(log_file="outputs/train/training.log")
+    if 'dp' in str(cfg.output_dir):
+        init_logging(log_file="outputs/train/training_dp.log")
+    else:
+        init_logging(log_file="outputs/train/training.log")
+
+    logging.getLogger().setLevel(logging.INFO)
 
     cfg.validate()
     logging.info(pformat(cfg.to_dict()))
@@ -334,5 +336,5 @@ def train(cfg: TrainPipelineConfig):
 
 
 if __name__ == "__main__":
-    init_logging()
+    # init_logging()
     train()
