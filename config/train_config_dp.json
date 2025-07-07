@@ -1,14 +1,14 @@
 {
     "dataset": {
-        "repo_id": "ralfroemer/pick_lego_block"
+        "repo_id": "ralfroemer/pick_lego_block_filtered"
     },
     "policy": {
         "type": "diffusion",
         "n_obs_steps": 1,
         "normalization_mapping": {
             "VISUAL": "MEAN_STD",
-            "STATE": "MIN_MAX",
-            "ACTION": "MIN_MAX"
+            "STATE": "MEAN_STD",
+            "ACTION": "MEAN_STD"
         },
         "input_features": {
             "observation.images.right_wrist_camera": {
@@ -96,11 +96,11 @@
     "seed": 1000,
     "num_workers": 4,
     "batch_size": 32,
-    "steps": 5000,
-    "eval_freq": 500,
+    "steps": 20000,
+    "eval_freq": 1000,
     "log_freq": 100,
     "save_checkpoint": true,
-    "save_freq": 1000,
+    "save_freq": 5000,
     "use_policy_training_preset": true,
     "optimizer": {
         "type": "adam",
