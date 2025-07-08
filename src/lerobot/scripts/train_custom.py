@@ -137,6 +137,9 @@ def train(cfg: TrainPipelineConfig):
 
     logging.getLogger().setLevel(logging.INFO)
 
+    # Remove "ralfroemer" from repo_id = "ralfroemer/pick_green_lego_block_filtered"
+    cfg.job_name = cfg.dataset.repo_id.split("/")[1] + "_" + cfg.policy.type
+
     cfg.validate()
     logging.info(pformat(cfg.to_dict()))
 
@@ -156,15 +159,6 @@ def train(cfg: TrainPipelineConfig):
 
     logging.info("Creating dataset")
     train_dataset, val_dataset = make_dataset_split(cfg)
-    # dataset = make_dataset(cfg)
-
-    # Create environment used for evaluating checkpoints during training on simulation data.
-    # On real-world data, no need to create an environment as evaluations are done outside train.py,
-    # using the eval.py instead, with gym_dora environment and dora-rs.
-    eval_env = None
-    if cfg.eval_freq > 0 and cfg.env is not None:
-        logging.info("Creating env")
-        eval_env = make_env(cfg.env, n_envs=cfg.eval.batch_size, use_async_envs=cfg.eval.use_async_envs)
 
     logging.info("Creating policy")
     policy = make_policy(
@@ -281,25 +275,12 @@ def train(cfg: TrainPipelineConfig):
         is_saving_step = step % cfg.save_freq == 0 or step == cfg.steps
         is_eval_step = cfg.eval_freq > 0 and step % cfg.eval_freq == 0
 
-        if is_log_step:
-            logging.info(train_tracker)
-            if wandb_logger:
-                wandb_log_dict = train_tracker.to_dict()
-                if output_dict:
-                    wandb_log_dict.update(output_dict)
-                wandb_logger.log_dict(wandb_log_dict, step)
-            train_tracker.reset_averages()
-
         if cfg.save_checkpoint and is_saving_step:
-            # logging.info(f"Checkpoint policy after step {step}")
             checkpoint_dir = get_step_checkpoint_dir(cfg.output_dir, cfg.steps, step)
-            # save_checkpoint(checkpoint_dir, step, cfg, policy, optimizer, lr_scheduler)
-            # checkpoint_dir = get_step_checkpoint_dir_str(cfg.output_dir, "last")
-            # save_checkpoint(checkpoint_dir, step, cfg, policy, optimizer, lr_scheduler)
             save_checkpoint(checkpoint_dir, step, cfg, policy, optimizer, lr_scheduler)
             update_last_checkpoint(checkpoint_dir)
-            if wandb_logger:
-                wandb_logger.log_policy(checkpoint_dir)
+            # if wandb_logger:
+            #     wandb_logger.log_policy(checkpoint_dir)
 
         if is_eval_step:
             step_id = get_step_identifier(step, cfg.steps)
@@ -328,6 +309,17 @@ def train(cfg: TrainPipelineConfig):
             else:
                 logging.info(f"Validation loss: {val_loss:.3f} at step {step_id}")
             policy.train()
+
+        if is_log_step:
+            logging.info(train_tracker)
+            if wandb_logger:
+                wandb_log_dict = train_tracker.to_dict()
+                if is_eval_step:
+                    wandb_log_dict["val_loss"] = val_loss
+                if output_dict:
+                    wandb_log_dict.update(output_dict)
+                wandb_logger.log_dict(wandb_log_dict, step)
+            train_tracker.reset_averages()
 
     logging.info("End of training")
 

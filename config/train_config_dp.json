@@ -1,6 +1,6 @@
 {
     "dataset": {
-        "repo_id": "ralfroemer/pick_lego_block_filtered"
+        "repo_id": "ralfroemer/pick_green_lego_block_filtered_nostates"
     },
     "policy": {
         "type": "diffusion",
@@ -93,9 +93,9 @@
     },
     "job_name": "diffusion",
     "resume": false,
-    "seed": 1000,
+    "seed": 0,
     "steps": 20000,
-    "eval_freq": 2000,
+    "eval_freq": 1000,
     "log_freq": 100,
     "save_checkpoint": true,
     "save_freq": 5000,
@@ -124,12 +124,12 @@
         "use_async_envs": false
     },
     "wandb": {
-        "enable": false,
+        "enable": true,
         "disable_artifact": false,
-        "project": "lerobot",
-        "entity": null,
+        "project": "franka-lerobot",
+        "entity": "ralf-roemer",
         "notes": null,
-        "run_id": null,
+        "run_id": "pick_green_lego_block_dp",
         "mode": null
     }
 }
