@@ -1,7 +1,4 @@
 {
-    "dataset": {
-        "repo_id": "ralfroemer/pick_green_lego_block_filtered_nostates"
-    },
     "policy": {
         "type": "diffusion",
         "n_obs_steps": 1,
@@ -129,7 +126,7 @@
         "project": "franka-lerobot",
         "entity": "ralf-roemer",
         "notes": null,
-        "run_id": "pick_green_lego_block_dp",
+        "run_id": null,
         "mode": null
     }
 }

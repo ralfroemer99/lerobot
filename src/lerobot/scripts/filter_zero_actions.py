@@ -7,7 +7,7 @@ from lerobot.datasets.lerobot_dataset import (
 def action_nonzero(frame):
     """Check if the action in the frame is zero."""
     action = frame["action"]
-    if np.linalg.norm(action[:3]) <= 1e-3:  # Check if the first 6 elements of the action are close to zero
+    if np.linalg.norm(action[:6]) <= 1e-6:  # Check if the first 6 elements of the action are close to zero
         print(f"Frame {frame['timestamp']} has zero action: {action}")
         return False
     else:
@@ -20,7 +20,7 @@ def clean_action(action):
     return action
     
 
-source_repo_id = "ralfroemer/pick_lego_block"
+source_repo_id = "ralfroemer/pick_green_lego_block"
 target_repo_id = source_repo_id + "_filtered"
 
 # Copy all frames from the source dataset to the target dataset, but filter out frames with zero actions.
@@ -57,12 +57,12 @@ for episode_idx in range(source_dataset.num_episodes):
         if gripper_previous is None:
             gripper_unchanged = True
         else:
-            gripper_unchanged = abs(action[6] - gripper_previous) <= 5e-2
+            gripper_unchanged = abs(action[6] - gripper_previous) <= 1e-2
         gripper_previous = action[6]
 
-        if np.linalg.norm(action[:3]) <= 1e-3 and gripper_unchanged:
-            # print(f"Skipping frame {frame_data['timestamp']} in episode {episode_idx} due to zero action")
-            continue
+        # if np.linalg.norm(action[:3]) <= 1e-3 and gripper_unchanged:
+        #     # print(f"Skipping frame {frame_data['timestamp']} in episode {episode_idx} due to zero action")
+        #     continue
 
         # Clean the action if needed
         action = clean_action(action)
@@ -81,7 +81,16 @@ for episode_idx in range(source_dataset.num_episodes):
                 frame_dict[key] = np.asarray(value)
         
         # Add the frame to the target dataset
-        task = source_dataset.meta.tasks[int(frame_data['task_index'])]
+        task_original = source_dataset.meta.tasks[int(frame_data['task_index'])]
+        if 'yellow' in task_original:
+            task = 'pick yellow block'
+        elif 'green' in task_original:
+            task = 'pick green block'
+        elif 'red' in task_original:
+            task = 'pick red block'
+        else:
+            raise ValueError(f"Unknown task {task_original} in episode {episode_idx}, frame {frame_idx}")
+
         dataset.add_frame(frame_dict, task=task)
         has_frames = True
     
